@@ -88,11 +88,11 @@ void LaunchController::decideAccount()
 
     // Find an account to use.
     auto accounts = APPLICATION->accounts();
-    if (accounts->count() <= 0 || !accounts->anyAccountIsValid()) {
-        // Tell the user they need to log in at least one account in order to play.
+    if (accounts->count() <= 0) {
+        // Tell the user they need at least one account configured in order to play.
         auto reply = CustomMessageBox::selectable(m_parentWidget, tr("No Accounts"),
-                                                  tr("In order to play Minecraft, you must have at least one Microsoft "
-                                                     "account which owns Minecraft logged in. "
+                                                  tr("In order to play Minecraft, you must have at least one account "
+                                                     "configured. "
                                                      "Would you like to open the account manager to add an account now?"),
                                                   QMessageBox::Information, QMessageBox::Yes | QMessageBox::No)
                          ->exec();
@@ -252,14 +252,17 @@ void LaunchController::login()
         }
 
         if (accountToCheck == nullptr) {
-            if (!m_session->demo)
+            if (m_accountToUse->accountType() == AccountType::Offline) {
+                m_session->wants_online = false;
+                launchInstance();
+            } else if (!m_session->demo) {
                 m_session->demo = askPlayDemo();
+            }
 
             if (m_session->demo)
                 launchInstance();
-            else
+            else if (m_accountToUse->accountType() != AccountType::Offline)
                 emitFailed(tr("Launch cancelled - account does not own Minecraft."));
-
             return;
         }
 
