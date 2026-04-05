@@ -101,6 +101,8 @@
 #include "ui/dialogs/ExportPackDialog.h"
 #include "ui/dialogs/IconPickerDialog.h"
 #include "ui/dialogs/ImportResourceDialog.h"
+#include "ui/dialogs/ChooseOfflineNameDialog.h"
+#include "ui/dialogs/MSALoginDialog.h"
 #include "ui/dialogs/NewInstanceDialog.h"
 #include "ui/dialogs/NewsDialog.h"
 #include "ui/dialogs/ProgressDialog.h"
@@ -708,9 +710,56 @@ void MainWindow::repopulateAccountsMenu()
     connect(ui->actionNoDefaultAccount, &QAction::triggered, this, &MainWindow::changeActiveAccount);
 
     ui->accountsMenu->addSeparator();
+
+    auto addOfflineAction = ui->accountsMenu->addAction(tr("Add Offline Account..."));
+    connect(addOfflineAction, &QAction::triggered, this, &MainWindow::addOfflineAccount);
+
+    if (APPLICATION->capabilities() & Application::SupportsMSA) {
+        auto addMicrosoftAction = ui->accountsMenu->addAction(tr("Add Microsoft Account..."));
+        connect(addMicrosoftAction, &QAction::triggered, this, &MainWindow::addMicrosoftAccount);
+    }
+
+    ui->accountsMenu->addSeparator();
     ui->accountsMenu->addAction(ui->actionManageAccounts);
 
     accountsButtonMenu->addActions(ui->accountsMenu->actions());
+}
+
+void MainWindow::addMicrosoftAccount()
+{
+    auto account = MSALoginDialog::newAccount(this);
+    if (!account) {
+        return;
+    }
+
+    auto accounts = APPLICATION->accounts();
+    const bool shouldSetDefault = accounts->count() == 0 || accounts->defaultAccount() == nullptr;
+    accounts->addAccount(account);
+    if (shouldSetDefault) {
+        accounts->setDefaultAccount(account);
+    }
+}
+
+void MainWindow::addOfflineAccount()
+{
+    ChooseOfflineNameDialog dialog(tr("Please enter your desired username to add your offline account."), this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    auto account = MinecraftAccount::createOffline(dialog.getUsername());
+    if (!account) {
+        return;
+    }
+
+    account->login()->start();
+
+    auto accounts = APPLICATION->accounts();
+    const bool shouldSetDefault = accounts->count() == 0 || accounts->defaultAccount() == nullptr;
+    accounts->addAccount(account);
+    if (shouldSetDefault) {
+        accounts->setDefaultAccount(account);
+    }
 }
 
 void MainWindow::updatesAllowedChanged(bool allowed)

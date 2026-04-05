@@ -1,5 +1,6 @@
 #pragma once
 #include <QWidget>
+#include "minecraft/auth/MinecraftAccount.h"
 #include "BaseWizardPage.h"
 
 namespace Ui {
@@ -18,7 +19,10 @@ class LoginWizardPage : public BaseWizardPage {
     void retranslate() override;
    private slots:
     void on_pushButton_clicked();
+    void on_offlineButton_clicked();
 
    private:
+    void finishWithAccount(const MinecraftAccountPtr& account);
+
     Ui::LoginWizardPage* ui;
 };

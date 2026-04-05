@@ -65,6 +65,29 @@
 
 LaunchController::LaunchController() : Task() {}
 
+MinecraftAccountPtr LaunchController::createOfflineAccount()
+{
+    ChooseOfflineNameDialog dialog(tr("Please enter your desired username to add your offline account."), m_parentWidget);
+    if (dialog.exec() != QDialog::Accepted) {
+        return nullptr;
+    }
+
+    auto account = MinecraftAccount::createOffline(dialog.getUsername());
+    if (!account) {
+        return nullptr;
+    }
+
+    account->login()->start();
+
+    auto accounts = APPLICATION->accounts();
+    const bool shouldSetDefault = accounts->count() == 0 || accounts->defaultAccount() == nullptr;
+    accounts->addAccount(account);
+    if (shouldSetDefault) {
+        accounts->setDefaultAccount(account);
+    }
+    return account;
+}
+
 void LaunchController::executeTask()
 {
     if (!m_instance) {
@@ -89,19 +112,23 @@ void LaunchController::decideAccount()
     // Find an account to use.
     auto accounts = APPLICATION->accounts();
     if (accounts->count() <= 0) {
-        // Tell the user they need at least one account configured in order to play.
-        auto reply = CustomMessageBox::selectable(m_parentWidget, tr("No Accounts"),
-                                                  tr("In order to play Minecraft, you must have at least one account "
-                                                     "configured. "
-                                                     "Would you like to open the account manager to add an account now?"),
-                                                  QMessageBox::Information, QMessageBox::Yes | QMessageBox::No)
-                         ->exec();
+        QMessageBox msgBox(m_parentWidget);
+        msgBox.setWindowTitle(tr("No Accounts"));
+        msgBox.setText(tr("No accounts are configured yet."));
+        msgBox.setInformativeText(
+            tr("You can add an offline account right now for local/offline play, or open the account manager."));
+        msgBox.setIcon(QMessageBox::Information);
+        auto addOfflineButton = msgBox.addButton(tr("Add Offline"), QMessageBox::AcceptRole);
+        auto manageAccountsButton = msgBox.addButton(tr("Manage Accounts"), QMessageBox::ActionRole);
+        auto cancelButton = msgBox.addButton(QMessageBox::Cancel);
+        msgBox.setDefaultButton(qobject_cast<QPushButton*>(addOfflineButton));
+        msgBox.exec();
 
-        if (reply == QMessageBox::Yes) {
-            // Open the account manager.
+        if (msgBox.clickedButton() == addOfflineButton) {
+            m_accountToUse = createOfflineAccount();
+        } else if (msgBox.clickedButton() == manageAccountsButton) {
             APPLICATION->ShowGlobalSettings(m_parentWidget, "accounts");
-        } else if (reply == QMessageBox::No) {
-            // Do not open "profile select" dialog.
+        } else if (msgBox.clickedButton() == cancelButton) {
             return;
         }
     }

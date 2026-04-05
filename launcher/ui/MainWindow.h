@@ -221,6 +221,8 @@ class MainWindow : public QMainWindow {
 
     void addInstance(const QString& url = QString(), const QMap<QString, QString>& extra_info = {});
     void activateInstance(BaseInstance* instance);
+    void addMicrosoftAccount();
+    void addOfflineAccount();
     void setCatBackground(bool enabled);
     void updateInstanceToolIcon(QString new_icon);
     void setSelectedInstanceById(const QString& id);

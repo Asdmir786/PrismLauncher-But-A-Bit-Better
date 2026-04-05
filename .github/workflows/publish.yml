@@ -1,23 +1,22 @@
-name: Publish
+name: Optional Publish
 
 on:
-  release:
-    types: [ released ]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  winget:
-    name: Winget
+  disabled:
+    name: Publishing Disabled
 
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Publish on Winget
-        uses: vedantmgoyal2009/winget-releaser@v2
-        with:
-          identifier: PrismLauncher.PrismLauncher
-          version: ${{ github.event.release.tag_name }}
-          installers-regex: 'PrismLauncher-Windows-MSVC(:?-arm64|-Legacy)?-Setup-.+\.exe$'
-          token: ${{ secrets.WINGET_TOKEN }}
+      - name: Explain disabled publish flow
+        shell: bash
+        run: |
+          {
+            echo "Automatic Winget publishing is disabled for this fork."
+            echo "The Windows release workflow now stops at creating the draft GitHub release and attaching the installer."
+          } >> "$GITHUB_STEP_SUMMARY"

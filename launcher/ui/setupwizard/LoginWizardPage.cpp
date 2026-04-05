@@ -1,5 +1,7 @@
 #include "LoginWizardPage.h"
 #include "minecraft/auth/AccountList.h"
+#include "minecraft/auth/MinecraftAccount.h"
+#include "ui/dialogs/ChooseOfflineNameDialog.h"
 #include "ui/dialogs/MSALoginDialog.h"
 #include "ui_LoginWizardPage.h"
 
@@ -27,11 +29,8 @@ void LoginWizardPage::retranslate()
     ui->retranslateUi(this);
 }
 
-void LoginWizardPage::on_pushButton_clicked()
+void LoginWizardPage::finishWithAccount(const MinecraftAccountPtr& account)
 {
-    wizard()->hide();
-    auto account = MSALoginDialog::newAccount(nullptr);
-    wizard()->show();
     if (account) {
         APPLICATION->accounts()->addAccount(account);
         APPLICATION->accounts()->setDefaultAccount(account);
@@ -41,4 +40,26 @@ void LoginWizardPage::on_pushButton_clicked()
             wizard()->next();
         }
     }
+}
+
+void LoginWizardPage::on_pushButton_clicked()
+{
+    wizard()->hide();
+    auto account = MSALoginDialog::newAccount(nullptr);
+    wizard()->show();
+    finishWithAccount(account);
+}
+
+void LoginWizardPage::on_offlineButton_clicked()
+{
+    ChooseOfflineNameDialog dialog(tr("Please enter your desired username to add your offline account."), this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    auto account = MinecraftAccount::createOffline(dialog.getUsername());
+    if (account) {
+        account->login()->start();
+    }
+    finishWithAccount(account);
 }

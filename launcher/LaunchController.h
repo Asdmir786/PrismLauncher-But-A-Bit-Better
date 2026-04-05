@@ -76,6 +76,7 @@ class LaunchController : public Task {
     void login();
     void launchInstance();
     void decideAccount();
+    MinecraftAccountPtr createOfflineAccount();
     bool askPlayDemo();
     QString askOfflineName(QString playerName, bool demo, bool* ok = nullptr);
     bool reauthenticateAccount(MinecraftAccountPtr account);
