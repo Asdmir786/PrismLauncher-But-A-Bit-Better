@@ -21,5 +21,5 @@ jobs:
         with:
           identifier: PrismLauncher.PrismLauncher
           version: ${{ github.event.release.tag_name }}
-          installers-regex: 'PrismLauncher-Windows-MSVC(:?-arm64|-Legacy)?-Setup-.+\.exe$'
+          installers-regex: 'PrismLauncher-Windows-MSVC-Setup-.+\.exe$'
           token: ${{ secrets.WINGET_TOKEN }}

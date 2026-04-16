@@ -5,7 +5,7 @@ inputs:
   build-type:
     description: Type for the build
     required: true
-    default: Debug
+    default: Release
   artifact-name:
     description: Name of the uploaded artifact
     required: true
