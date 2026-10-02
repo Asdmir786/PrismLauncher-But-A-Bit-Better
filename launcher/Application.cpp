@@ -856,8 +856,10 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
         }
         {
             auto resetIfInvalid = [this](const Setting* setting) {
-                if (const QUrl url(setting->get().toString()); !url.isValid() || (url.scheme() != "http" && url.scheme() != "https")) {
-                    m_settings->reset(setting->id());
+                if (const auto value = setting->get().toString(); !value.isEmpty()) {
+                    if (const QUrl url(value); !url.isValid() || (url.scheme() != "http" && url.scheme() != "https")) {
+                        m_settings->reset(setting->id());
+                    }
                 }
             };
 
@@ -880,16 +882,8 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
         m_settings->registerSetting("MSAClientIDOverride", "");
 
         // Custom Flame API Key
-        {
-            m_settings->registerSetting("CFKeyOverride", "");
-            m_settings->registerSetting("FlameKeyOverride", "");
+        m_settings->registerSetting({ "FlameKeyOverride", "CFKeyOverride" }, "");
 
-            QString flameKey = m_settings->get("CFKeyOverride").toString();
-
-            if (!flameKey.isEmpty())
-                m_settings->set("FlameKeyOverride", flameKey);
-            m_settings->reset("CFKeyOverride");
-        }
         m_settings->registerSetting("FallbackMRBlockedMods", true);
         m_settings->registerSetting("ModrinthToken", "");
         m_settings->registerSetting("UserAgentOverride", "");
@@ -933,15 +927,6 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
         QString pass = settings()->get("ProxyPass").toString();
         updateProxySettings(proxyTypeStr, addr, port, user, pass);
         qInfo() << "<> Network done.";
-    }
-
-    // load translations
-    {
-        m_translations.reset(new TranslationsModel("translations"));
-        auto bcp47Name = m_settings->get("Language").toString();
-        m_translations->selectLanguage(bcp47Name);
-        qInfo() << "Your language is" << bcp47Name;
-        qInfo() << "<> Translations loaded.";
     }
 
     // Instance icons
@@ -1022,8 +1007,13 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
         qInfo() << "<> Cache initialized.";
     }
 
-    // now we have network, download translation updates
-    m_translations->downloadIndex();
+    // load translations
+    {
+        m_translations.reset(new TranslationsModel("translations"));
+        m_translations->downloadIndex();
+        qInfo() << "Your language is" << m_translations->selectedLanguage();
+        qInfo() << "<> Translations loaded.";
+    }
 
     // FIXME: what to do with these?
     m_profilers.insert("jprofiler", std::shared_ptr<BaseProfilerFactory>(new JProfilerFactory()));

@@ -127,9 +127,11 @@ void BaseEntityLoadTask::executeTask()
             }
 
             // on online the hash needs to match
-            hashMatches = m_entity->m_sha256 == m_entity->m_file_sha256;
+            const auto& expected = m_entity->m_sha256;
+            const auto& actual = m_entity->m_file_sha256;
+            hashMatches = expected == actual;
             if (m_mode == Net::Mode::Online && !m_entity->m_sha256.isEmpty() && !hashMatches) {
-                throw Exception("mismatched checksum");
+                throw Exception(QString("Checksum mismatch, expected sha256: %1, got: %2").arg(expected, actual));
             }
 
             // load local file
@@ -141,7 +143,7 @@ void BaseEntityLoadTask::executeTask()
             }
 
         } catch (const Exception& e) {
-            qDebug() << QString("Unable to parse file %1: %2").arg(fname, e.cause());
+            qCritical() << QString("Unable to parse file %1: %2").arg(fname, e.cause());
             // just make sure it's gone and we never consider it again.
             FS::deletePath(fname);
             m_entity->m_load_status = BaseEntity::LoadStatus::NotLoaded;
@@ -175,10 +177,10 @@ void BaseEntityLoadTask::executeTask()
     m_task->addNetAction(dl);
     m_task->setAskRetry(false);
     connect(m_task.get(), &Task::failed, this, &BaseEntityLoadTask::emitFailed);
-    connect(m_task.get(), &Task::succeeded, this, &BaseEntityLoadTask::emitSucceeded);
     connect(m_task.get(), &Task::succeeded, this, [this]() {
         m_entity->m_load_status = BaseEntity::LoadStatus::Remote;
         m_entity->m_file_sha256 = m_entity->m_sha256;
+        emitSucceeded();
     });
 
     connect(m_task.get(), &Task::progress, this, &Task::setProgress);
